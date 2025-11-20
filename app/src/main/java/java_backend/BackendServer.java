@@ -1,6 +1,9 @@
 package java_backend;
 
 import com.sun.net.httpserver.HttpServer;
+
+import java_backend.controller.UserHandler;
+
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.*;
@@ -11,7 +14,7 @@ public class BackendServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         
         server.createContext("/api/hello", new HelloHandler());
-        
+        server.createContext("/api/user", new UserHandler());
         server.start();
     }
     static class HelloHandler implements HttpHandler {
@@ -24,6 +27,7 @@ public class BackendServer {
                 os.write(response.getBytes());
                 os.close();
             }
+            
         }
     }
 }
