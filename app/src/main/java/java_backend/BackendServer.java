@@ -8,6 +8,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import java.io.*;
 import java.net.InetSocketAddress;
+import java_backend.controller.FileHandler;
 
 public class BackendServer {
     public static void main(String[] args) throws IOException {
@@ -15,6 +16,7 @@ public class BackendServer {
         
         server.createContext("/api/hello", new HelloHandler());
         server.createContext("/api/user", new UserHandler());
+        server.createContext("/api/file", new FileHandler());
         server.start();
     }
     static class HelloHandler implements HttpHandler {
