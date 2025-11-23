@@ -35,6 +35,32 @@ public class UserService {
         }
     }
     
+    public String authenticateUser(String login, String password) {
+        if (login == null || login.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+            return null;
+        }
+
+        String selectSQL = "SELECT uuid FROM users WHERE login = ? AND password = ?";
+
+        try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(selectSQL)) {
+            pstmt.setString(1, login.trim());
+            pstmt.setString(2, password);
+            System.out.print(pstmt);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String uuid = rs.getString("uuid");
+                    System.out.println("Найден UUID: " + uuid); // Добавьте эту строку для отладки
+                    return uuid;
+                } else {
+                    return null; 
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Ошибка аутентификации пользователя: " + e.getMessage());
+            return null;
+        }
+    }
+
     public void close() {
         try {
             if (connectorBD.getDatabaseConnector() != null && !connectorBD.getDatabaseConnector().isClosed()) {
