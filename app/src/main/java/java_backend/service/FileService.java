@@ -219,4 +219,28 @@ public class FileService {
         return oldFiles;
     }
 
+    public java.util.List<FileInfo> getFilesByUserUuid(String userUuid) {
+        String selectSQL = "SELECT uuid, user_uuid, start_time FROM files_exchange WHERE user_uuid = ? ORDER BY start_time DESC";
+
+        java.util.List<FileInfo> userFiles = new java.util.ArrayList<>();
+
+        try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(selectSQL)) {
+            pstmt.setString(1, userUuid);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    userFiles.add(new FileInfo(
+                        rs.getString("uuid"),
+                        rs.getString("user_uuid"),
+                        rs.getTimestamp("start_time")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting files by user UUID: " + e.getMessage());
+        }
+
+        return userFiles;
+    }
+
 }

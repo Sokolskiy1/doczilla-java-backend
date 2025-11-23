@@ -2,6 +2,7 @@ package java_backend;
 
 import com.sun.net.httpserver.HttpServer;
 
+import java_backend.controller.AuthHandler;
 import java_backend.controller.UserHandler;
 import java_backend.controller.WeatherHandler;
 import java_backend.service.FileCleanupService;
@@ -28,6 +29,7 @@ public class BackendServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         
         server.createContext("/api/hello", new HelloHandler());
+        server.createContext("/api/auth", new AuthHandler());
         server.createContext("/api/user", new UserHandler());
         server.createContext("/api/file", new FileHandler());
         server.createContext("/api/weather", new WeatherHandler());
