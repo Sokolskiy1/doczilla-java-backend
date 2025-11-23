@@ -57,7 +57,12 @@ public class FileHandler implements HttpHandler{
             String uuid = fileProcessor.processFileUpload(exchange,fileType);
 
             if (uuid!=null) {
-                sendResponse(exchange, 201, "ok: Файл успешно загружен пользователем " + userId);
+                boolean fileSaved = fileService.addingFile(uuid, userId, fileType);
+                if (fileSaved) {
+                    sendResponse(exchange, 201, "ok: Файл успешно загружен и сохранен в БД пользователем " + userId);
+                } else {
+                    sendResponse(exchange, 500, "Internal Server Error: Файл загружен, но не удалось сохранить в БД");
+                }
             } else {
 
                sendResponse(exchange, 500, "Internal Server Error: Ошибка при загрузке файла" );
