@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 import org.apache.commons.io.IOUtils;
 
@@ -21,12 +22,27 @@ public class FileService {
 
     public FileService() throws SQLException {
         this.connectorBD = new ConnectorBD();
-        // createFilesTableIfNotExists();
+        createFilesTableIfNotExists();
+    }
+
+    private void createFilesTableIfNotExists() throws SQLException {
+        String createTableSQL = "CREATE TABLE IF NOT EXISTS files_exchange (" +
+                "uuid TEXT PRIMARY KEY, " +
+                "user_uuid TEXT, " +
+                "start_time TIMESTAMP NOT NULL)";
+
+        try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(createTableSQL)) {
+            pstmt.execute();
+            System.out.println("Files table created or already exists");
+        } catch (SQLException e) {
+            System.err.println("Error creating files table: " + e.getMessage());
+            throw e;
+        }
     }
 
     public boolean addingFile(String uuid_file, String uuid_user, String file_type) {
         String insertSQL = "INSERT INTO files_exchange (uuid, user_uuid,  start_time) VALUES (?, ?, ?)";
-
+        System.out.print(Timestamp.valueOf(LocalDateTime.now()));
         try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(insertSQL)) {
             pstmt.setString(1, uuid_file);
             pstmt.setString(2, uuid_user);
@@ -64,7 +80,6 @@ public class FileService {
     }
 
     public FileDownloadInfo getFileForDownload(String uuid) throws IOException {
-        // Проверяем, существует ли файл в базе данных
         FileInfo fileInfo = getFileByUuid(uuid);
         if (fileInfo == null) {
             return null;
@@ -72,7 +87,6 @@ public class FileService {
 
         Path uploadDir = Paths.get("uploads/");
 
-        // Ищем файл с указанным UUID
         try (var files = Files.list(uploadDir)) {
             Path filePath = files
                 .filter(path -> path.getFileName().toString().startsWith(uuid + "."))
@@ -148,6 +162,61 @@ public class FileService {
         public Timestamp getStartTime() { return startTime; }
     }
 
-    
+    public boolean deleteFile(String uuid) {
+        String deleteSQL = "DELETE FROM files_exchange WHERE uuid = ?";
+
+        try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(deleteSQL)) {
+            pstmt.setString(1, uuid);
+
+            int rowsAffected = pstmt.executeUpdate();
+
+            // Delete file from filesystem
+            Path uploadDir = Paths.get("uploads/");
+            try (var files = Files.list(uploadDir)) {
+                Path filePath = files
+                    .filter(path -> path.getFileName().toString().startsWith(uuid + "."))
+                    .findFirst()
+                    .orElse(null);
+
+                if (filePath != null && Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    System.out.println("Deleted file: " + filePath.toString());
+                }
+            } catch (IOException e) {
+                System.err.println("Error deleting file from filesystem: " + e.getMessage());
+            }
+
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Error deleting file from database: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public java.util.List<FileInfo> getOldFiles(int minutesOld) {
+        String selectSQL = "SELECT uuid, user_uuid, start_time FROM files_exchange WHERE start_time < ?";
+
+        java.util.List<FileInfo> oldFiles = new java.util.ArrayList<>();
+
+        try (PreparedStatement pstmt = connectorBD.getDatabaseConnector().prepareStatement(selectSQL)) {
+            Timestamp cutoffTime = Timestamp.valueOf(LocalDateTime.now().minus(minutesOld, ChronoUnit.MINUTES));
+            pstmt.setTimestamp(1, cutoffTime);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    oldFiles.add(new FileInfo(
+                        rs.getString("uuid"),
+                        rs.getString("user_uuid"),
+                        rs.getTimestamp("start_time")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting old files: " + e.getMessage());
+        }
+
+        return oldFiles;
+    }
 
 }
