@@ -36,6 +36,10 @@ public class FileHandler implements HttpHandler{
     public void handle(HttpExchange exchange) throws IOException {
         try {
             switch (exchange.getRequestMethod()) {
+                case "OPTIONS":
+                    // Handle preflight requests
+                    sendResponse(exchange, 200, "");
+                    break;
                 case "POST":
                    handleFileUpload(exchange);
                     break;
@@ -69,6 +73,7 @@ public class FileHandler implements HttpHandler{
             }
 
             // Отправляем файл
+            java_backend.BackendServer.addCorsHeaders(exchange);
             exchange.getResponseHeaders().set("Content-Type", downloadInfo.getContentType());
             exchange.getResponseHeaders().set("Content-Disposition", "attachment; filename=\"" + downloadInfo.getFileName() + "\"");
             exchange.sendResponseHeaders(200, downloadInfo.getFileData().length);
@@ -94,17 +99,17 @@ public class FileHandler implements HttpHandler{
             String fileType = exchange.getRequestHeaders().getFirst("X-File-Type");
             String uuid = fileProcessor.processFileUpload(exchange,fileType);
 
-            if (uuid!=null) {
-                boolean fileSaved = fileService.addingFile(uuid, userId, fileType);
-                if (fileSaved) {
-                    sendResponse(exchange, 201, "ok: Файл успешно загружен и сохранен в БД пользователем " + userId);
-                } else {
-                    sendResponse(exchange, 500, "Internal Server Error: Файл загружен, но не удалось сохранить в БД");
-                }
+        if (uuid!=null) {
+            boolean fileSaved = fileService.addingFile(uuid, userId, fileType);
+            if (fileSaved) {
+                String jsonResponse = String.format("{\"success\": true, \"uuid\": \"%s\", \"message\": \"Файл успешно загружен и сохранен в БД пользователем %s\"}", uuid, userId);
+                sendResponse(exchange, 201, jsonResponse);
             } else {
-
-               sendResponse(exchange, 500, "Internal Server Error: Ошибка при загрузке файла" );
+                sendResponse(exchange, 500, "{\"success\": false, \"error\": \"Файл загружен, но не удалось сохранить в БД\"}");
             }
+        } else {
+           sendResponse(exchange, 500, "{\"success\": false, \"error\": \"Ошибка при загрузке файла\"}" );
+        }
         } else {
 
             exchange.sendResponseHeaders(405, -1);
@@ -134,6 +139,7 @@ public class FileHandler implements HttpHandler{
     }
 
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        java_backend.BackendServer.addCorsHeaders(exchange);
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());

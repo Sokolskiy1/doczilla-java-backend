@@ -32,11 +32,15 @@ public class UserHandler implements HttpHandler {
         System.out.print("System.out.print(параметр)System.out.print(параметр)");
         try {
             switch (exchange.getRequestMethod()) {
+                case "OPTIONS":
+                    // Handle preflight requests
+                    sendResponse(exchange, 200, "");
+                    break;
                 case "POST":
                     handleCreateUser(exchange);
                     break;
                 case "GET":
-                    
+
                     break;
                 default:
                     sendResponse(exchange, 405, "Method Not Allowed");
@@ -47,6 +51,7 @@ public class UserHandler implements HttpHandler {
     }
 
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        java_backend.BackendServer.addCorsHeaders(exchange);
         exchange.sendResponseHeaders(statusCode, response.getBytes().length);
         OutputStream os = exchange.getResponseBody();
         os.write(response.getBytes());

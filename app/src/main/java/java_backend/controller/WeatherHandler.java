@@ -21,12 +21,18 @@ public class WeatherHandler implements HttpHandler {
     public WeatherHandler() {
         this.weatherService = new WeatherService();
         this.objectMapper = new ObjectMapper();
-        this.objectMapper.findAndRegisterModules();
+        this.objectMapper.findAndRegisterModules(); // For LocalDateTime serialization
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
+            if ("OPTIONS".equals(exchange.getRequestMethod())) {
+                // Handle preflight requests
+                sendResponse(exchange, 200, "");
+                return;
+            }
+
             if (!"GET".equals(exchange.getRequestMethod())) {
                 sendResponse(exchange, 405, "{\"error\": \"Method Not Allowed\"}");
                 return;
@@ -65,6 +71,7 @@ public class WeatherHandler implements HttpHandler {
     }
 
     private void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
+        java_backend.BackendServer.addCorsHeaders(exchange);
         exchange.getResponseHeaders().set("Content-Type", "application/json");
         exchange.sendResponseHeaders(statusCode, response.getBytes(StandardCharsets.UTF_8).length);
         OutputStream os = exchange.getResponseBody();
