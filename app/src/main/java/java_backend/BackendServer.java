@@ -3,6 +3,7 @@ package java_backend;
 import com.sun.net.httpserver.HttpServer;
 
 import java_backend.controller.UserHandler;
+import java_backend.controller.WeatherHandler;
 import java_backend.service.FileCleanupService;
 
 import com.sun.net.httpserver.HttpHandler;
@@ -20,6 +21,7 @@ public class BackendServer {
         server.createContext("/api/hello", new HelloHandler());
         server.createContext("/api/user", new UserHandler());
         server.createContext("/api/file", new FileHandler());
+        server.createContext("/api/weather", new WeatherHandler());
 
          FileCleanupService cleanupService = null;
         try {
@@ -28,7 +30,6 @@ public class BackendServer {
             System.err.println("Failed to start FileCleanupService: " + e.getMessage());
         }
 
-        // Add shutdown hook to properly stop the cleanup service
         final FileCleanupService finalCleanupService = cleanupService;
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Shutting down server...");
@@ -39,7 +40,6 @@ public class BackendServer {
         }));
 
         server.start();
-        // Add shutdown hook to properly stop the cleanup service
         
     }
     static class HelloHandler implements HttpHandler {

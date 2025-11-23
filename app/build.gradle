@@ -25,6 +25,7 @@ dependencies {
     implementation libs.guava
 
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0'
 
     // sqlLite
     implementation 'org.xerial:sqlite-jdbc:3.42.0.0'
@@ -35,6 +36,9 @@ dependencies {
 
     // Servlet API for Apache Commons FileUpload
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
+
+    // Redis client
+    implementation 'redis.clients:jedis:5.2.0'
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
