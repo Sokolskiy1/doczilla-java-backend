@@ -53,7 +53,7 @@ pom.xml.versionsBackup
 text_proba.txt
 
 # db
-mydatabase.db
+# mydatabase.db
 
 test/
 
